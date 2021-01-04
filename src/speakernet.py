@@ -26,7 +26,7 @@ class CommonVoiceDataset(Dataset):
     sample_rate = 16000
 
     def __init__(self, train=True, transform=None, split_rate=0.7):
-        tsv = './CommonVoice/cv-corpus-5.1-2020-06-22/ja/validated.tsv'
+        tsv = 'data/CommonVoice/cv-corpus-5.1-2020-06-22/ja/validated.tsv'
         # データセットの一意性確認と正解ラベルの列挙
         import pandas as pd
         df = pd.read_table(tsv)

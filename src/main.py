@@ -16,8 +16,8 @@ import torch
 from torch.utils.data import Dataset
 import torchaudio
 import torchvision
-from speech import SpeechML, MFCC_DIM
-MODEL_PATH = 'model/cnn1d_20210102.pth'
+from speakernet import SpeakerML, MFCC_DIM
+MODEL_PATH = 'data/model/cnn1d_20210102.pth'
 
 
 class Speech(torch.Tensor):
@@ -74,10 +74,12 @@ class Speech(torch.Tensor):
         return x.transform(lambda x: x + 80)
 
     def mfcc(self, *, log_mels=False, window=None, hop=None):
-        # windowのデフォルトはself.window * 400
-        # hopのデフォルトはwindow/2 = self.windwo * 200
-        # 出力結果には次元0を含む
-        # 出力結果のwindow = hop
+        '''
+        windowのデフォルトはself.window * 400
+        hopのデフォルトはwindow/2 = self.windwo * 200
+        出力結果には次元0を含む
+        出力結果のwindow = hop
+        '''
         if not window:
             window = self.window * 400
         if not hop:
@@ -143,9 +145,9 @@ class Speech(torch.Tensor):
             'Input must be MFCC with power coefficient 0.'
         x = self.transform(lambda x: x[:, 1:])
         dataset = ChunkedMFCCDataset(x, vad)
-        x_vectors = SpeechML(test_dataset=dataset, n_classes=170,
-                             load_pretrained_state=MODEL_PATH,
-                             test_last_hidden_layer=True)
+        x_vectors = SpeakerML(test_dataset=dataset, n_classes=170,
+                              load_pretrained_state=MODEL_PATH,
+                              test_last_hidden_layer=True)
         # コサイン類似度の計算
         cos_sim = Speech(x_vectors).cos_sim()
         if not n_speakers:  # 話者数自動判別
@@ -172,9 +174,12 @@ class Speech(torch.Tensor):
 
     # ユーティリティ関数群
 
-    # x: -1次元が時間軸、-2次元が特徴量軸である、2次元のndarray
-    # t: xの時刻だが、最後はxの最終項の終了時刻であり、xの時間軸より1つ要素が多い
     def to_tx(self):
+        '''
+        返り値
+        x: -1次元が時間軸、-2次元が特徴量軸である、2次元のndarray
+        t: xの時刻だが、最後はxの最終項の終了時刻であり、xの時間軸より1つ要素が多い
+        '''
         t = np.arange(self.size()[-1] + 1) * self.window
         x = self.numpy().copy()
         while x.ndim > 2:
@@ -313,7 +318,8 @@ class ChunkedMFCCDataset(Dataset):
 
 # 呼び出しサンプル
 if __name__ == '__main__':
-    x = Speech.read('meetings/meeting1.mp3').resample().mfcc(log_mels=True)
+    x = Speech.read('data/meetings/meeting1.mp3')
+    x = x.resample().mfcc(log_mels=True)
     vad = x.vad(threshold=0.2)
     vad.show(chart='wave', width=300)
 #    x.diarized(vad, n_speakers=4).show(chart='class', width=300)
